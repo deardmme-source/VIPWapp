@@ -1,0 +1,88 @@
+#!/sbin/sh
+SKIPUNZIP=1
+
+ui_print() { echo "$1"; }
+abort()    { ui_print ""; ui_print "  ❌ $1"; ui_print ""; exit 1; }
+ok()       { ui_print "  ✅ $1"; }
+info()     { ui_print "  ➜  $1"; }
+warn()     { ui_print "  ⚠️  $1"; }
+
+ui_print ""
+ui_print "╔══════════════════════════════════════╗"
+ui_print "║        VIP WAPP  v1.0.0              ║"
+ui_print "║   WhatsApp Enhancer — No LSPosed     ║"
+ui_print "║   Magisk  •  KernelSU  •  APatch     ║"
+ui_print "╚══════════════════════════════════════╝"
+ui_print ""
+
+# ── Android version ───────────────────────────────────────────────────────────
+API=$(getprop ro.build.version.sdk)
+[ "$API" -lt 28 ] && abort "Requires Android 9+ (API 28). Your device: API $API"
+ok "Android API $API — Compatible"
+
+# ── Architecture ──────────────────────────────────────────────────────────────
+ARCH=$(getprop ro.product.cpu.abi)
+ok "Architecture: $ARCH"
+
+# ── Root manager ──────────────────────────────────────────────────────────────
+if [ -n "$KSU" ]; then
+    ok "KernelSU detected"
+elif [ -n "$MAGISK_VER_CODE" ]; then
+    ok "Magisk detected"
+else
+    warn "Root manager unknown — proceeding"
+fi
+
+# ── Zygisk check ─────────────────────────────────────────────────────────────
+info "Checking Zygisk..."
+ZYGISK_OK=false
+# KSU built-in zygisk or Magisk zygisk
+if [ -d "/data/adb/modules" ]; then
+    ZYGISK_OK=true
+    ok "Zygisk environment ready"
+fi
+
+# ── Extract module ────────────────────────────────────────────────────────────
+info "Installing VIP Wapp module..."
+unzip -o "$ZIPFILE" -d "$MODPATH" >/dev/null 2>&1
+ok "Module files extracted"
+
+# ── Set permissions ───────────────────────────────────────────────────────────
+set_perm_recursive "$MODPATH" root root 0755 0644
+set_perm "$MODPATH/service.sh"    root root 0755
+set_perm "$MODPATH/action.sh"     root root 0755
+set_perm "$MODPATH/uninstall.sh"  root root 0755
+ok "Permissions configured"
+
+# ── WhatsApp detection ────────────────────────────────────────────────────────
+WA_FOUND=false
+for pkg in com.whatsapp com.whatsapp.w4b; do
+    if pm list packages 2>/dev/null | grep -q "^package:${pkg}$"; then
+        ok "WhatsApp found: $pkg"
+        WA_FOUND=true
+    fi
+done
+$WA_FOUND || warn "WhatsApp not installed yet — install it before using VIP Wapp"
+
+# ── Write initial status ──────────────────────────────────────────────────────
+mkdir -p "$MODPATH/status"
+{
+    echo "module_version=1.0.0"
+    echo "install_date=$(date '+%Y-%m-%d')"
+    echo "api_level=$API"
+    echo "arch=$ARCH"
+    echo "wa_found=$WA_FOUND"
+    echo "status=installed"
+} > "$MODPATH/status/module.prop"
+
+ui_print ""
+ui_print "╔══════════════════════════════════════╗"
+ui_print "║        ✅ Module Installed!          ║"
+ui_print "║                                      ║"
+ui_print "║  NEXT STEPS:                         ║"
+ui_print "║  1. Reboot your device               ║"
+ui_print "║  2. Install VIP Wapp app from repo   ║"
+ui_print "║  3. Open app → Enable features       ║"
+ui_print "║  4. Enjoy! 🚀                        ║"
+ui_print "╚══════════════════════════════════════╝"
+ui_print ""

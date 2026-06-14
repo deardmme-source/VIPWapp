@@ -1,0 +1,7 @@
+id=vipwapp
+name=VIP Wapp
+version=v1.0.0
+versionCode=1
+author=VIPWapp Team
+description=🔥 VIP Wapp - WhatsApp Enhancer. Privacy • Media • Customization. No LSPosed needed. Install app from repo after flashing.
+updateJson=https://raw.githubusercontent.com/YOUR_USERNAME/VIPWapp/main/update.json
